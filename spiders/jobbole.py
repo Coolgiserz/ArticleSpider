@@ -5,11 +5,12 @@ from scrapy.http import Request
 from urllib import parse
 from ArticleSpider.items import JobboleArticleItem
 from ArticleSpider.utils.common import get_md5
+import datetime
 class JobboleSpider(scrapy.Spider):
     name = 'jobbole'
     allowed_domains = ['blog.jobbole.com']
-    # start_urls = ['http://blog.jobbole.com/all-posts/']
-    start_urls = ['http://blog.jobbole.com/category/career/']
+    start_urls = ['http://blog.jobbole.com/all-posts/']
+    # start_urls = ['http://blog.jobbole.com/category/career/']
 
     def parse(self, response):
         '''
@@ -59,7 +60,12 @@ class JobboleSpider(scrapy.Spider):
 
         jobbole["title"] = title
         jobbole["url"] = response.url
-        jobbole["create_date"] = postdate
+        try:
+            postdate = datetime.datetime.strftime(postdate,'%Y/%m/%d').date()
+        except Exception as e:
+            postdate = datetime.datetime.now().date()
+
+        jobbole["postdate"] = postdate
         jobbole["praise_nums"] = praise
         jobbole["comment_nums"] = comment
         jobbole["fav_nums"] = favorite

@@ -16,7 +16,7 @@ class ArticlespiderItem(scrapy.Item):
 class JobboleArticleItem(scrapy.Item):
     title = scrapy.Field()
     tags = scrapy.Field()
-    create_date = scrapy.Field()
+    postdate = scrapy.Field()
     praise_nums = scrapy.Field()
     comment_nums = scrapy.Field()
     fav_nums = scrapy.Field()
