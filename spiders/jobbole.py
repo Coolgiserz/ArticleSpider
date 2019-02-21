@@ -3,11 +3,13 @@ import scrapy
 import re
 from scrapy.http import Request
 from urllib import parse
-
+from ArticleSpider.items import JobboleArticleItem
+from ArticleSpider.utils.common import get_md5
 class JobboleSpider(scrapy.Spider):
     name = 'jobbole'
     allowed_domains = ['blog.jobbole.com']
-    start_urls = ['http://blog.jobbole.com/all-posts/']
+    # start_urls = ['http://blog.jobbole.com/all-posts/']
+    start_urls = ['http://blog.jobbole.com/category/career/']
 
     def parse(self, response):
         '''
@@ -16,16 +18,20 @@ class JobboleSpider(scrapy.Spider):
         :param response:
         :return:
         '''
-        post_urls =  response.css("#archive .floated-thumb .post-thumb a::attr(href)").extract()
-        for post_url in post_urls:
-            yield Request(url=parse.urljoin(response.url,post_url),callback=self.parse_detail)
+        post_nodes =  response.css("#archive .floated-thumb .post-thumb a")
+
+        for post_node in post_nodes:
+            image_url = post_node.css("img::attr(src)").extract_first("")
+            post_url = post_node.css("::attr(href)").extract_first("")
+            yield Request(url=parse.urljoin(response.url,post_url),meta={"front_image_url":image_url},callback=self.parse_detail)
         # 提取下一页链接
         next_url = response.css(".next.page-numbers::attr(href)").extract_first()
         if next_url:
             yield Request(url=parse.urljoin(response.url,next_url),callback=self.parse)
-            # archive > div.navigation.margin-20 > a.next.page-numbers
         pass
     def parse_detail(self,response):
+        jobbole = JobboleArticleItem()
+        front_image_url = response.meta.get("front_image_url","")
         title = response.xpath('//*[@class="entry-header"]/h1/text()').extract_first()  # 博客标题
         content = response.xpath('//div[@class="entry"]').extract_first()  # 博客内容
         postdate = response.xpath('//*[@class="entry-meta-hide-on-mobile"]/text()').extract_first().replace('·',
@@ -50,4 +56,17 @@ class JobboleSpider(scrapy.Spider):
         tag_lists = response.xpath('//*[@class="entry-meta-hide-on-mobile"]/a/text()').extract()
         tag_lists = [i for i in tag_lists if not i.strip().endswith('评论')]
         tags = ",".join(tag_lists)
+
+        jobbole["title"] = title
+        jobbole["url"] = response.url
+        jobbole["create_date"] = postdate
+        jobbole["praise_nums"] = praise
+        jobbole["comment_nums"] = comment
+        jobbole["fav_nums"] = favorite
+        jobbole["front_image_url"] = [front_image_url]
+        jobbole["tags"] = tags
+        jobbole["content"] = content
+        jobbole["url_object_id"] = get_md5(response.url)
+        # jobbole["url_object_id"] = front_image_url
+        yield  jobbole # 传递到pipeline
         pass
