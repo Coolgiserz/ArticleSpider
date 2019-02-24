@@ -82,11 +82,19 @@ class MysqlTwistedPipline(object):
         print(failure)
     def do_insert(self,cursor,item):
         #数据库插入
+        # insert_sql = """
+        #          insert into jobbole_spider_copy2(title,tags,postdate,praise_nums,comment_nums,fav_nums,front_image_url,front_image_path,url,url_object_id,content)
+        #          values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE url_object_id=9;
+        #      """
+        print('prepare to insert data')
         insert_sql = """
-                 insert into jobbole_spider_copy2(title,tags,postdate,praise_nums,comment_nums,fav_nums,front_image_url,front_image_path,url,url_object_id,content)
-                 values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-             """
+                 insert into jobbole_spider_copy1(title,tags,postdate,praise_nums,comment_nums,fav_nums,front_image_url,front_image_path,url,url_object_id,content)
+                 values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE praise_nums=VALUES(praise_nums),comment_nums=VALUES(comment_nums),fav_nums=VALUES(fav_nums);
+        """
+
         cursor.execute(insert_sql,(item["title"],item["tags"],item["postdate"],item["praise_nums"],item["comment_nums"],item["fav_nums"],item["front_image_url"],item["front_image_path"],item["url"],item["url_object_id"],item["content"]))
+        print('insert data sessfully')
+
 class ArticleImagePipeline(ImagesPipeline):
     '''
     定制pipeline，处理封面图
